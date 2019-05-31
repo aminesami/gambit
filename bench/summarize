@@ -102,12 +102,22 @@ runtime == 1 && /^[ ]*[0-9]+ ms cpu time \([0-9]+ user, [0-9]+ system\)$/ {
   cpu = $1/1000;
 }
 
+runtime == 1 && /^[ ]*[0-9.]+s elapsed cpu time/ {
+  cpu = $1;
+  gsub("s","",cpu)
+}
+
 runtime == 1 && /^[ ]*[0-9.]+ secs real time$/ {
   real = $1;
 }
 
 runtime == 1 && /^[ ]*[0-9]+ ms real time$/ {
   real = $1/1000;
+}
+
+runtime == 1 && /^[ ]*[0-9.]+s elapsed real time/ {
+  real = $1;
+  gsub("s","",real)
 }
 
 runtime == 1 && /^cpu time: ([0-9]+) real time: ([0-9]+)/ {
@@ -124,22 +134,22 @@ runtime == 1 && /^code size = [0-9]+$/ {
   codesize = $4;
 }
 
-runtime == 1 && /^[ ]*[0-9,]+[ ]+cycles .*$/ {
+runtime == 1 && /^[ ]*[0-9,]+[ ]+cycles(:u)? .*$/ {
   cycles = $1;
   gsub(",","",cycles);
 }
 
-runtime == 1 && /^[ ]*[0-9,]+[ ]+instructions .*$/ {
+runtime == 1 && /^[ ]*[0-9,]+[ ]+instructions(:u)? .*$/ {
   instrs = $1;
   gsub(",","",instrs);
 }
 
-runtime == 1 && /^[ ]*[0-9,]+[ ]+branches .*$/ {
+runtime == 1 && /^[ ]*[0-9,]+[ ]+branches(:u)? .*$/ {
   branches = $1;
   gsub(",","",branches);
 }
 
-runtime == 1 && /^[ ]*[0-9,]+[ ]+branch-misses .*$/ {
+runtime == 1 && /^[ ]*[0-9,]+[ ]+branch-misses(:u)? .*$/ {
   branchmisses = $1;
   gsub(",","",branchmisses);
 }

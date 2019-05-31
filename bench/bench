@@ -94,6 +94,8 @@ setting is the benchmarking setting.  The possible values are:
 GAMBIT_COMP=${GAMBIT_COMP:-"../../../gsc/gsc -:=../../.."}
 GAMBIT_INT=${GAMBIT_INT:-"../../../gsi/gsi -:m10000,d-,=../../.."}
 
+CHEZ=${CHEZ:-"../../../bin/scheme"}
+
 CPU_LIMIT=${CPU_LIMIT:-"300"}
 
 ulimit -t $CPU_LIMIT
@@ -335,12 +337,18 @@ larceny_exec ()
 
 chez_comp ()
 {
-  :
+  rm -f $1.so
+  printf "$REPLCOMMANDS" "$1" | $CHEZ $COMPOPTS
 }
 
 chez_exec ()
 {
-  printf "$REPLCOMMANDS" "$1" | scheme
+  if command -v perf
+  then
+    perf stat $CHEZ --program ./$1.so
+  else
+    /usr/bin/time $CHEZ --program ./$1.so
+  fi
 }
 
 # -----------------------------------------------------------------------------
@@ -939,14 +947,24 @@ chicken-int) NAME='Chicken-int'
 
       chez) NAME='Chez-Scheme'
             COMP=chez_comp
-            COMPOPTS=""
+            COMPOPTS="--optimize-level 3 --compile-imported-libraries -q"
             EXEC=chez_exec
             iterfile=num-iters.scm
             extension=".scm"
-            INSERTCODE=""
+            case "$setting" in
+              r5rs | r6rs | r6rs-unsafe)
+                INSERTCODE="(define-syntax if-fixflo-unsafe (syntax-rules () ((if-fixflo-unsafe yes only-fixflo no) no)))"
+                ;;
+              r6rs-fixflo)
+                INSERTCODE="(define-syntax if-fixflo-unsafe (syntax-rules () ((if-fixflo-unsafe yes only-fixflo no) only-fixflo)))"
+                ;;
+              r6rs-fixflo-unsafe)
+                INSERTCODE="(define-syntax if-fixflo-unsafe (syntax-rules () ((if-fixflo-unsafe yes only-fixflo no) yes)))"
+                ;;
+            esac
             PREFIXCODE="; %s %s"
             SUFFIXCODE="; %s %s"
-            REPLCOMMANDS="(load \"%s.scm\")"
+            REPLCOMMANDS="(compile-file \"%s.scm\")"
             ;;
 
 petite-chez) NAME='Petite-Chez-Scheme'
@@ -958,7 +976,7 @@ petite-chez) NAME='Petite-Chez-Scheme'
              INSERTCODE=""
              PREFIXCODE="; %s %s"
              SUFFIXCODE="; %s %s"
-             REPLCOMMANDS="(load \"%s.scm\")"
+             REPLCOMMANDS="(compile-file \"%s.scm\")"
              ;;
 
        mit) NAME='MIT-Scheme'
